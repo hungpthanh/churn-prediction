@@ -1,1 +1,1 @@
-from .preprocessing import normalize_data
+from .preprocessing import normalize_data, clear_data

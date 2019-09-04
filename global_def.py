@@ -1,3 +1,4 @@
+CUSTOMER_ID = 'customerID'
 GENDER = 'gender'
 SENIOR_CITIZEN = 'SeniorCitizen'
 PARTNER = 'Partner'
