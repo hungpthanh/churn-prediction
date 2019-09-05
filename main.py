@@ -3,9 +3,6 @@ import torch
 import numpy as np
 import pandas as pd
 import lib
-from global_def import *
-from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split
 import torch.optim as optim
 import torch.nn.functional as F
 from sklearn import tree
