@@ -7,9 +7,11 @@ import torch.optim as optim
 import torch.nn.functional as F
 from sklearn import tree
 from sklearn.metrics import classification_report, accuracy_score
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--algo', default='FFN', type=str, help="choosing algorithm: FFN and decisiontree")
+parser.add_argument('--algo', default='logisticregression', type=str, help="choosing algorithm: FFN, decisiontree, randomforest, logisticregression")
 parser.add_argument("--batchsize", type=int, default=64)
 parser.add_argument("--input_dim", type=int, default=19)
 parser.add_argument("--output_dim", type=int, default=125)
@@ -41,9 +43,19 @@ def main():
     df_train_input_sc, df_train_target, df_test_input_sc, df_test_target = lib.clear_data(df, args)
 
     if args.algo == 'decisiontree':
-        dtc = tree.DecisionTreeClassifier(max_depth=6, random_state=42)
-        dtc.fit(df_train_input_sc, df_train_target)
-        y_pred_dtc = dtc.predict(df_test_input_sc)
+        model = tree.DecisionTreeClassifier(max_depth=6, random_state=42)
+        model.fit(df_train_input_sc, df_train_target)
+        y_pred = model.predict(df_test_input_sc)
+
+    if args.algo == 'randomforest':
+        model = RandomForestClassifier(random_state=0, n_estimators=1000, criterion="gini")
+        model.fit(df_train_input_sc, df_train_target)
+        y_pred = model.predict(df_test_input_sc)
+
+    if args.algo == 'logisticregression':
+        model = LogisticRegression(penalty="l1", C=.1, random_state=42)
+        model.fit(df_train_input_sc, df_train_target)
+        y_pred = model.predict(df_test_input_sc)
 
     if args.algo == 'FFN':
         model = lib.FFN(df_train_input_sc.shape[1], args.output_dim, args.num_classes)
@@ -76,9 +88,9 @@ def main():
             target_data_test = torch.LongTensor(df_test_target)
             logit = model(input_data_test)
             loss = F.nll_loss(logit, target_data_test)
-            y_pred_dtc = logit.data.max(1)[1]
+            y_pred = logit.data.max(1)[1]
 
-    print(classification_report(df_test_target, y_pred_dtc))
+    print(classification_report(df_test_target, y_pred))
 
 
 if __name__ == '__main__':
