@@ -11,7 +11,7 @@ import torch.nn.functional as F
 from sklearn import tree
 from sklearn.metrics import classification_report, accuracy_score
 parser = argparse.ArgumentParser()
-parser.add_argument('--algo', default='FFN', type=str)
+parser.add_argument('--algo', default='decisiontree', type=str)
 parser.add_argument("--batchsize", type=int, default=64)
 parser.add_argument("--input_dim", type=int, default=19)
 parser.add_argument("--output_dim", type=int, default=125)
@@ -72,16 +72,17 @@ def main():
                 loss.backward()
                 optimizer.step()
             print("Epoch: {} - loss: {}".format(epoch, float(sum_loss) / cnt))
+
+        # testing
         model.eval()
         with torch.no_grad():
             input_data_test = torch.Tensor(df_test_input_sc)
             target_data_test = torch.LongTensor(df_test_target)
             logit = model(input_data_test)
             loss = F.nll_loss(logit, target_data_test)
-            pred = logit.data.max(1)[1]
+            y_pred_dtc = logit.data.max(1)[1]
 
-        print(classification_report(df_test_target, pred))
-    # print(classification_report(df_test_target, y_pred_dtc))
+    print(classification_report(df_test_target, y_pred_dtc))
     # print(accuracy_score(df_test_target, y_pred_dtc))
     # print(type(y_pred_dtc))
     # print(y_pred_dtc.shape)
