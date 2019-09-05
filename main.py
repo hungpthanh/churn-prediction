@@ -11,7 +11,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--algo', default='logisticregression', type=str, help="choosing algorithm: FFN, decisiontree, randomforest, logisticregression")
+parser.add_argument('--algo', default='randomforest', type=str, help="choosing algorithm: FFN, decisiontree, randomforest, logisticregression")
 parser.add_argument("--batchsize", type=int, default=64)
 parser.add_argument("--input_dim", type=int, default=19)
 parser.add_argument("--output_dim", type=int, default=125)
@@ -48,12 +48,12 @@ def main():
         y_pred = model.predict(df_test_input_sc)
 
     if args.algo == 'randomforest':
-        model = RandomForestClassifier(random_state=0, n_estimators=1000, criterion="gini")
+        model = RandomForestClassifier(random_state=42, n_estimators=1000, criterion="gini")
         model.fit(df_train_input_sc, df_train_target)
         y_pred = model.predict(df_test_input_sc)
 
     if args.algo == 'logisticregression':
-        model = LogisticRegression(penalty="l1", C=.1, random_state=42)
+        model = LogisticRegression(penalty="l1", random_state=42)
         model.fit(df_train_input_sc, df_train_target)
         y_pred = model.predict(df_test_input_sc)
 
