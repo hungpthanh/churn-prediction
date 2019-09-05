@@ -1,2 +1,1 @@
-# churn-predictation
-# Test
+# churn-prediction
