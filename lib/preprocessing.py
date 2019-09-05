@@ -1,11 +1,26 @@
 from sklearn.preprocessing import LabelEncoder
 import pandas as pd
+from global_def import *
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
+import lib
+import numpy as np
 
-
-def clear_data(df):
+def clear_data(df, args):
+    df = df.drop(CUSTOMER_ID, 1)
     df = df[~(df.TotalCharges == " ")]  # delete empty string
     df.TotalCharges = pd.to_numeric(df.TotalCharges)
-    return df
+    df, dict_label_encoders = lib.normalize_data(df, discrete_features)
+    df_train, df_test = train_test_split(df, test_size=0.25, random_state=args.seed)
+    df_train_input = df_train.iloc[:, :-3]
+    print(df_train_input.head)
+    df_train_target = np.array(df_train[CHURN])
+    df_test_input = df_test.iloc[:, :-3]
+    df_test_target = np.array(df_test[CHURN])
+    scaler = StandardScaler()
+    df_train_input_sc = scaler.fit_transform(df_train_input)
+    df_test_input_sc = scaler.transform(df_test_input)
+    return df_train_input_sc, df_train_target, df_test_input_sc, df_test_target
 
 
 def normalize_data(df, features):
