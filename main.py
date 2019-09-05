@@ -12,7 +12,7 @@ from sklearn import tree
 from sklearn.metrics import classification_report, accuracy_score
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--algo', default='FFN', type=str)
+parser.add_argument('--algo', default='FFN', type=str, help="choosing algorithm: FFN and decisiontree")
 parser.add_argument("--batchsize", type=int, default=64)
 parser.add_argument("--input_dim", type=int, default=19)
 parser.add_argument("--output_dim", type=int, default=125)
