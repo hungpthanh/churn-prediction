@@ -9,14 +9,25 @@ from sklearn import tree
 from sklearn.metrics import classification_report, accuracy_score
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
+import numpy as np
+
+from time import time
+from scipy.stats import randint as sp_randint
+
+from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import RandomizedSearchCV
+from sklearn.datasets import load_digits
+from sklearn.ensemble import RandomForestClassifier
+
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--algo', default='randomforest', type=str, help="choosing algorithm: FFN, decisiontree, randomforest, logisticregression")
+parser.add_argument('--algo', default='FFN', type=str, help="choosing algorithm: FFN, decisiontree, randomforest, logisticregression")
 parser.add_argument("--batchsize", type=int, default=64)
 parser.add_argument("--input_dim", type=int, default=19)
 parser.add_argument("--output_dim", type=int, default=125)
 parser.add_argument("--num_epochs", type=int, default=1000)
 parser.add_argument("--num_classes", type=int, default=2)
+parser.add_argument("--all_feature", type=int, default=0, help="using all fearure 1, only using discrete feature 0")
 parser.add_argument("-seed", type=int, default=7, help="Seed for random initialization")
 parser.add_argument('--raw_data', default='data/data.csv', type=str)
 parser.add_argument("--is_eval", action='store_true')
@@ -37,23 +48,108 @@ if args.cuda:
     torch.cuda.manual_seed(args.seed)
 
 
+def finding_parameter():
+    def report(results, n_top=3):
+        for i in range(1, n_top + 1):
+            candidates = np.flatnonzero(results['rank_test_score'] == i)
+            for candidate in candidates:
+                print("Model with rank: {0}".format(i))
+                print("Mean validation score: {0:.3f} (std: {1:.3f})".format(
+                    results['mean_test_score'][candidate],
+                    results['std_test_score'][candidate]))
+                print("Parameters: {0}".format(results['params'][candidate]))
+                print("")
+
+    df = pd.read_csv(args.raw_data)
+    df_train_input_sc, df_train_target, df_test_input_sc, df_test_target = lib.clear_data(df, args)
+
+    if args.algo == 'decisiontree':
+        clf = tree.DecisionTreeClassifier()
+        param_dist = {"max_depth": [3, 4, 5, 6, 7, 8, 9, 10],
+                      "max_features": sp_randint(1, 11),
+                      "min_samples_split": sp_randint(2, 11),
+                      "min_samples_leaf": [0.05, 0.1, 1],
+                      "criterion": ["gini", "entropy"],
+                      "splitter": ["best", "random"],
+                      "class_weight": ["balanced", None]
+                       }
+
+    if args.algo == 'randomforest':
+        print("Finding parameter for random forest")
+        # build a classifier
+        clf = RandomForestClassifier(n_estimators=1000)
+        param_dist = {"max_depth": [3, 4, 5, 6, 7, 8, 9, 10],
+                      "max_features": sp_randint(1, 11),
+                      "min_samples_split": sp_randint(2, 11),
+                      "bootstrap": [True, False],
+                      "criterion": ["gini", "entropy"]}
+        # Utility function to report best scores
+
+    if args.algo == "logisticregression":
+        print("Finding parameter for logisticregression")
+        clf = LogisticRegression()
+        param_dist = {
+            "penalty": ["l1", "l2"],
+            "tol": [0.00001, 0.0001, 0.001, 0.01, 0.1, 1],
+            "C": [0.05, 0.1],
+            "fit_intercept": [True, False],
+            "intercept_scaling": [0.01, 0.1, 1],
+            "max_iter": [10, 100, 1000]
+        }
+
+        # specify parameters and distributions to sample from
+
+    # run randomized search
+    n_iter_search = 10000
+    random_search = RandomizedSearchCV(clf, param_distributions=param_dist,
+                                       n_iter=n_iter_search, cv=5, iid=False)
+
+    start = time()
+    random_search.fit(df_train_input_sc, df_train_target)
+    print("RandomizedSearchCV took %.2f seconds for %d candidates"
+          " parameter settings." % ((time() - start), n_iter_search))
+    report(random_search.cv_results_)
+
+
 def main():
     print("Loading train data from {}".format(args.raw_data))
     df = pd.read_csv(args.raw_data)
     df_train_input_sc, df_train_target, df_test_input_sc, df_test_target = lib.clear_data(df, args)
 
     if args.algo == 'decisiontree':
-        model = tree.DecisionTreeClassifier(max_depth=6, random_state=42)
+        # model = tree.DecisionTreeClassifier(max_depth=6, random_state=42)
+        model = tree.DecisionTreeClassifier(min_samples_leaf=0.05,
+                                            min_samples_split=3,
+                                            class_weight=None,
+                                            splitter="best",
+                                            max_features=8,
+                                            criterion="entropy",
+                                            max_depth=6)
         model.fit(df_train_input_sc, df_train_target)
         y_pred = model.predict(df_test_input_sc)
 
     if args.algo == 'randomforest':
-        model = RandomForestClassifier(random_state=42, n_estimators=1000, criterion="gini")
+        model = RandomForestClassifier(random_state=42,  # pafam for using all feature
+                                       n_estimators=1000,
+                                       criterion="gini",
+                                       max_depth=7,
+                                       bootstrap=True,
+                                       max_features=5,
+                                       min_samples_leaf=7,
+                                       min_samples_split=7)
+
         model.fit(df_train_input_sc, df_train_target)
         y_pred = model.predict(df_test_input_sc)
 
     if args.algo == 'logisticregression':
-        model = LogisticRegression(penalty="l1", random_state=42)
+        model = LogisticRegression(penalty="l2",
+                                   random_state=42,
+                                   C=.05,
+                                   tol=0.1,
+                                   intercept_scaling=1,
+                                   fit_intercept=True,
+                                   max_iter=10)  # for all feature
+
         model.fit(df_train_input_sc, df_train_target)
         y_pred = model.predict(df_test_input_sc)
 
@@ -95,3 +191,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+    # finding_parameter()
