@@ -175,7 +175,6 @@ def main():
         optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
         dataloader = lib.DataLoader(df_train_input_sc, df_train_target, args.batchsize)
 
-        print(df_train_input_sc.shape)
         # training
         model.train()
         for epoch in range(args.num_epochs):
