@@ -21,13 +21,13 @@ from sklearn.ensemble import RandomForestClassifier
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--algo', default='FFN', type=str, help="choosing algorithm: FFN, decisiontree, randomforest, logisticregression")
+parser.add_argument('--algo', default='logisticregression', type=str, help="choosing algorithm: FFN, decisiontree, randomforest, logisticregression")
 parser.add_argument("--batchsize", type=int, default=64)
 parser.add_argument("--input_dim", type=int, default=19)
 parser.add_argument("--output_dim", type=int, default=125)
 parser.add_argument("--num_epochs", type=int, default=1000)
 parser.add_argument("--num_classes", type=int, default=2)
-parser.add_argument("--all_feature", type=int, default=0, help="using all fearure 1, only using discrete feature 0")
+parser.add_argument("--all_feature", type=int, default=1, help="using all fearure 1, only using discrete feature 0")
 parser.add_argument("-seed", type=int, default=7, help="Seed for random initialization")
 parser.add_argument('--raw_data', default='data/data.csv', type=str)
 parser.add_argument("--is_eval", action='store_true')
@@ -117,7 +117,12 @@ def main():
     df_train_input_sc, df_train_target, df_test_input_sc, df_test_target = lib.clear_data(df, args)
 
     if args.algo == 'decisiontree':
-        # model = tree.DecisionTreeClassifier(max_depth=6, random_state=42)
+        # min_samples_leaf: 0.05, min_samples_split: 10, class_weight: None, splitter: best, max_features: 10
+        # criterion: entropy, max_depth: 7 for all feature
+
+        # min_samples_leaf: 0.05, min_samples_split: 3, class_weight: None, splitter: best, max_features: 8
+        # criterion: entropy, max_depth: 6 for discrete feature
+
         model = tree.DecisionTreeClassifier(min_samples_leaf=0.05,
                                             min_samples_split=3,
                                             class_weight=None,
@@ -129,6 +134,12 @@ def main():
         y_pred = model.predict(df_test_input_sc)
 
     if args.algo == 'randomforest':
+        #  random_state: 42, n_estimators: 1000, criterion: gini, max_depth: 7, bootstrap: True, max_features: 5,
+        #  min_samples_leaf: 7, min_samples_split: 7 for all feature
+
+        #  random_state: 42, n_estimators: 100, criterion: gini, max_depth: 7, bootstrap: True, max_features: 5,
+        #  min_samples_leaf: 7, min_samples_split: 7 for discrete feature
+
         model = RandomForestClassifier(random_state=42,  # pafam for using all feature
                                        n_estimators=1000,
                                        criterion="gini",
@@ -142,13 +153,19 @@ def main():
         y_pred = model.predict(df_test_input_sc)
 
     if args.algo == 'logisticregression':
-        model = LogisticRegression(penalty="l2",
+        # penalty: l1, random_state: 42, C: 0.05, tol: 0.01, intercept_scaling: 3, fit_intercept: True,
+        # max_iter: 10 for all feature
+
+        # penalty: l2, random_state: 42, C: 0.05, tol: 0.1, intercept_scaling: 1, fit_intercept: True,
+        # max_iter: 10 for discrete feature
+
+        model = LogisticRegression(penalty="l1",
                                    random_state=42,
                                    C=.05,
-                                   tol=0.1,
-                                   intercept_scaling=1,
+                                   tol=0.01,
+                                   intercept_scaling=3,
                                    fit_intercept=True,
-                                   max_iter=10)  # for all feature
+                                   max_iter=10)
 
         model.fit(df_train_input_sc, df_train_target)
         y_pred = model.predict(df_test_input_sc)
