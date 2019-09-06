@@ -49,6 +49,10 @@ if args.cuda:
 
 
 def finding_parameter():
+    """
+    Finding parameter for machine learning model
+    :return: parameter for traditional machine learning algorithm
+    """
     def report(results, n_top=3):
         for i in range(1, n_top + 1):
             candidates = np.flatnonzero(results['rank_test_score'] == i)
