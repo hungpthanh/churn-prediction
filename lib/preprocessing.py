@@ -19,6 +19,24 @@ def clear_data(df, args):
     df.TotalCharges = pd.to_numeric(df.TotalCharges) # change value to number
     df, dict_label_encoders = lib.normalize_data(df, discrete_features)
     df_train, df_test = train_test_split(df, test_size=0.25, random_state=args.seed)
+    if args.algo == 'FFN':
+        print("Add data")
+        print(type(df_train))
+        print(df_train.head())
+        print("shape")
+        print(df_train.shape)
+        print(df_train[df_train.Churn == 1].head())
+        df_tmp = df_train[df_train.Churn == 1]
+        print(df_train.describe(include='all'))
+        # df_train = df_train.append(df_tmp)
+        # df_train = df_train.append(df_tmp)
+        print("count")
+        print(df_train['Churn'].value_counts())
+        print("shape")
+        print(df_train.shape)
+        print("After append")
+        print(df_train.head())
+        print(df_train.describe(include='all'))
 
     if args.all_feature == 1:
         en_index = -1

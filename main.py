@@ -10,6 +10,7 @@ from sklearn.metrics import classification_report, accuracy_score
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 import numpy as np
+from sklearn.ensemble import AdaBoostClassifier
 
 from time import time
 from scipy.stats import randint as sp_randint
@@ -18,10 +19,10 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.datasets import load_digits
 from sklearn.ensemble import RandomForestClassifier
-
+from xgboost import XGBClassifier
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--algo', default='logisticregression', type=str, help="choosing algorithm: FFN, decisiontree, randomforest, logisticregression")
+parser.add_argument('--algo', default='XGB', type=str, help="choosing algorithm: FFN, decisiontree, randomforest, logisticregression, ADA, XGB")
 parser.add_argument("--batchsize", type=int, default=64)
 parser.add_argument("--input_dim", type=int, default=19)
 parser.add_argument("--output_dim", type=int, default=125)
@@ -171,6 +172,16 @@ def main():
                                    fit_intercept=True,
                                    max_iter=10)
 
+        model.fit(df_train_input_sc, df_train_target)
+        y_pred = model.predict(df_test_input_sc)
+
+    if args.algo == 'ADA':
+        model = AdaBoostClassifier()
+        model.fit(df_train_input_sc, df_train_target)
+        y_pred = model.predict(df_test_input_sc)
+
+    if args.algo == 'XGB':
+        model = XGBClassifier()
         model.fit(df_train_input_sc, df_train_target)
         y_pred = model.predict(df_test_input_sc)
 
